@@ -1,0 +1,26 @@
+
+# Environment variables
+.env
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.so
+*.egg
+*.egg-info/
+dist/
+build/
+.vscode/
+.idea/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Screenshots (user-added)
+screenshots/*.jpg
+screenshots/*.jpeg
+screenshots/*.png
+
