@@ -1,7 +1,6 @@
-
 # Temperature Display and MQTT Monitoring System
 
-A complete IoT temperature monitoring system for academic embedded systems assignment.
+A complete IoT temperature monitoring system for an academic embedded systems assignment.
 
 **Candidate:** MUHIZI Lilian Brian
 
@@ -15,120 +14,282 @@ DHT11 Sensor → Arduino Uno → 16×2 LCD + USB Serial → Python PC Client →
 
 ## Features
 
-- **Arduino Uno**: Reads temperature from DHT11, displays on 16×2 LCD (with horizontal scrolling for long names), transmits via serial
-- **Python PC Client**: Reads serial data, publishes to MQTT broker, displays values in real time in the terminal
-- **MQTT Broker**: Mosquitto on Ubuntu VPS
-- **Web Dashboard**: Single-page HTML dashboard with real-time temperature gauge, chart, live readings log, and statistics
+- **Arduino Uno**: Reads temperature from DHT11, displays the candidate name and temperature on a 16×2 LCD, and sends temperature values through USB serial.
+- **Python PC Client**: Reads temperature data from Arduino serial communication and publishes values to the MQTT broker.
+- **MQTT Broker**: Mosquitto MQTT broker running on an Ubuntu VPS.
+- **Web Dashboard**: Displays real-time temperature values, gauge, history chart, statistics, and live readings.
 
-## Hardware Setup
+---
+
+# Hardware Setup
 
 See [docs/wiring_guide.md](docs/wiring_guide.md) for detailed wiring instructions.
 
-### Quick Wiring Reference
+## Quick Wiring Reference
 
-| Component   | Pin  | Arduino Pin |
-|-------------|------|-------------|
-| LCD GND     | GND  | GND         |
-| LCD VCC     | VCC  | 5V          |
-| LCD SDA     | SDA  | A4          |
-| LCD SCL     | SCL  | A5          |
-| DHT11 GND   | GND  | GND         |
-| DHT11 DATA  | DATA | D2          |
-| DHT11 VCC   | VCC  | D7          |
+| Component | Pin | Arduino Pin |
+|-----------|-----|-------------|
+| LCD GND | GND | GND |
+| LCD VCC | VCC | 5V |
+| LCD SDA | SDA | A4 |
+| LCD SCL | SCL | A5 |
+| DHT11 GND | GND | GND |
+| DHT11 DATA | DATA | D2 |
+| DHT11 VCC | VCC | 3.3V |
 
-## Repository Structure
+The DHT11 sensor is powered directly from the Arduino 3.3V pin.
+
+---
+
+# Repository Structure
 
 ```
 Embedded_practical/
+│
 ├── arduino/
-│   └── temperature_monitor.ino      # Arduino program (Part 1)
+│   └── temperature_monitor.ino
+│
 ├── pc_client/
-│   └── main.py                      # Python MQTT client (Part 2)
-├── dashboard.html                   # Web dashboard (real-time display)
+│   └── main.py
+│
+├── dashboard.html
+│
 ├── docs/
-│   ├── system_architecture.md       # System architecture diagram
-│   ├── wiring_guide.md              # Hardware wiring guide
-│   ├── mqtt_setup.md                # MQTT broker setup
-│   └── vps_setup.md                 # VPS configuration
-├── screenshots/                     # Execution screenshots
-├── requirements.txt                 # Python dependencies
-├── .env.example                     # Environment variable template
+│   ├── system_architecture.md
+│   ├── wiring_guide.md
+│   ├── mqtt_setup.md
+│   └── vps_setup.md
+│
+├── screenshots/
+│
+├── requirements.txt
+├── .env.example
 ├── .gitignore
 ├── LICENSE
 └── README.md
 ```
 
-## Software Setup
+---
 
-### 1. Arduino Setup
+# Software Setup
 
-1. Install the following libraries in Arduino IDE:
-   - **DHT sensor library** by Adafruit
-   - **Adafruit Unified Sensor**
-   - **LiquidCrystal_I2C**
-2. Open `arduino/temperature_monitor.ino`
-3. Upload to Arduino Uno
+## 1. Arduino Setup
 
-#### LCD Display Behavior
-- **Row 1**: Candidate name (`MUHIZI Lilian Brian`) — scrolls horizontally since it exceeds 16 characters
-- **Row 2**: Temperature value (e.g., `Temp: 25.3 C`)
+Install the following libraries:
 
-### 2. Python PC Client Setup
+- DHT sensor library by Adafruit
+- Adafruit Unified Sensor
+- LiquidCrystal_I2C
+
+Open:
+
+```
+arduino/temperature_monitor.ino
+```
+
+Select:
+
+```
+Board: Arduino Uno
+Port: Arduino USB Port
+```
+
+Upload the sketch.
+
+## LCD Display Behavior
+
+The LCD displays:
+
+### First Row
+
+The candidate name with horizontal scrolling:
+
+```
+MUHIZI Lilian Brian
+```
+
+### Second Row
+
+The temperature value:
+
+```
+Temp: 21.8 C
+```
+
+The Arduino sends only the temperature value through serial communication:
+
+Example:
+
+```
+21.8
+```
+
+---
+
+# 2. Python PC Client Setup
+
+Install dependencies:
 
 ```bash
 pip install -r requirements.txt
-cp .env.example .env
-# Edit .env with your serial port and MQTT broker details
-cd pc_client
-python main.py
 ```
 
-The PC client will:
-- Read temperature values from Arduino via serial port
-- Publish values to the MQTT broker on the VPS
-- Display incoming values in real time in the terminal
+Create environment file:
 
-### 3. Web Dashboard
+```bash
+cp .env.example .env
+```
 
-Open `dashboard.html` in any browser (or deploy to your VPS). On first load:
+Edit `.env`:
 
-1. Click **⚙️ MQTT Settings**
-2. Enter your MQTT broker WebSocket URL (e.g., `ws://your-vps-ip:9001`)
-3. Set the topic to `temperature/sensor`
-4. Click **Connect**
+```env
+SERIAL_PORT=/dev/ttyACM0
+BAUD_RATE=9600
+MQTT_BROKER=157.173.101.159
+MQTT_PORT=1883
+MQTT_TOPIC=temperature/sensor
+CLIENT_ID=pc_client_001
+MQTT_QOS=0
+MQTT_RETAIN=false
+```
+
+Run the client:
+
+```bash
+python3 pc_client/main.py
+```
+
+Example successful output:
+
+```
+Connecting to MQTT broker at 157.173.101.159:1883
+Serial port connected successfully
+Connected to MQTT broker successfully
+Received temperature: 21.8
+Published temperature: 21.8
+```
+
+---
+
+# 3. MQTT Broker Setup
+
+The system uses Mosquitto MQTT broker running on the VPS.
+
+## Test MQTT Messages
+
+Subscribe to the temperature topic:
+
+```bash
+mosquitto_sub -h 157.173.101.159 -t "temperature/sensor" -v
+```
+
+Expected output:
+
+```
+temperature/sensor 21.8
+```
+
+Publish a test message:
+
+```bash
+mosquitto_pub -h 157.173.101.159 -t "temperature/sensor" -m "25.0"
+```
+
+---
+
+# 4. Web Dashboard Setup
+
+The dashboard is available as:
+
+```
+dashboard.html
+```
+
+It can be opened locally or hosted on the VPS.
+
+Open MQTT settings in the dashboard.
+
+Use:
+
+```
+Broker Host:
+ws://157.173.101.159:9001
+```
+
+Topic:
+
+```
+temperature/sensor
+```
+
+Click:
+
+```
+Connect
+```
+
+## Dashboard Features
 
 The dashboard displays:
-- **Current temperature** with live updates
-- **High / Low / Average** statistics
-- **Temperature gauge** (0–50 °C range)
-- **Temperature history chart** (last 50 readings)
-- **Live readings log** with timestamps
 
-> **Note:** The MQTT broker must have WebSocket support enabled (default port 9001 for Mosquitto).
+- Current temperature
+- Temperature gauge
+- Temperature history graph
+- Maximum temperature
+- Minimum temperature
+- Average temperature
+- Live temperature readings
 
-## Communication Protocols
+---
 
-| Link                  | Protocol             | Details                     |
-|-----------------------|----------------------|-----------------------------|
-| Arduino → PC          | USB Serial (UART)    | 9600 baud                   |
-| PC → MQTT Broker      | MQTT v3.1.1 over TCP | Topic: `temperature/sensor` |
-| Dashboard → Broker    | MQTT over WebSocket  | Port: 9001                  |
+# Communication Protocols
 
-## Documentation
+| Communication Link | Protocol | Details |
+|--------------------|----------|---------|
+| Arduino → PC | USB Serial (UART) | 9600 baud |
+| PC → MQTT Broker | MQTT v3.1.1 | Port 1883 |
+| Dashboard → MQTT Broker | MQTT over WebSocket | Port 9001 |
+
+---
+
+# System Architecture
+
+```
+              DHT11 Sensor
+                   |
+                   |
+                   v
+              Arduino Uno
+                   |
+          USB Serial (9600 baud)
+                   |
+                   v
+            Python PC Client
+                   |
+            MQTT TCP Port 1883
+                   |
+                   v
+          Mosquitto MQTT Broker
+                   |
+        MQTT WebSocket Port 9001
+                   |
+                   v
+            Web Dashboard
+```
+
+---
+
+# Documentation
+
+Additional documentation:
 
 - [System Architecture](docs/system_architecture.md)
 - [Wiring Guide](docs/wiring_guide.md)
 - [MQTT Setup](docs/mqtt_setup.md)
 - [VPS Setup](docs/vps_setup.md)
 
-## Screenshots
+---
 
-Add the following screenshots to the `screenshots/` directory:
-- `lcd_display.jpg` — LCD showing candidate name and temperature
-- `serial_output.jpg` — Serial monitor / PC client output
-- `mqtt_messages.jpg` — MQTT messages being transmitted
-- `dashboard.jpg` — Web dashboard showing real-time data
-
-## License
+# License
 
 MIT License
